@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+.spreadsheet {
+  display: inline-block;
+  border: 1px solid #ccc;
+  user-select: none;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-family: Arial, sans-serif;
+}
+
+.spreadsheet th,
+.spreadsheet td {
+  border: 1px solid #ccc;
+  padding: 5px;
+  min-width: 80px;
+  height: 30px;
+  text-align: center;
+}
+
+.spreadsheet th {
+  background: #f0f0f0;
+  user-select: none;
+}
+
+.spreadsheet td {
+  cursor: pointer;
+}
+
+.spreadsheet td.editing {
+  background: #fff;
+  padding: 0;
+}
+
+.spreadsheet input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
