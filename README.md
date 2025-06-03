@@ -1,6 +1,8 @@
 
 # Minimalist UI for Storing Blind Letter Pairs (`memo`)
 
+Use at memo.rithwikg.com
+
 ## Features
 
 1. Upload from CSV. Download your Google Sheets and upload them to `memo`.
