@@ -170,6 +170,7 @@ const Spreadsheet = ({ initialData, onSave }) => {
     const newData = data.map(r => r.slice());
     newData[row][col] = e.target.value;
     setData(newData);
+    onSave(newData);
   };
 
   const handleContextMenu = (e, r, c) => {
