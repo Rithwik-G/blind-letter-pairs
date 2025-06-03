@@ -1,7 +1,7 @@
 
 # Minimalist UI for Storing Blind Letter Pairs (`memo`)
 
-Use at memo.rithwikg.com
+Use at [memo.rithwikg.com](https://memo.rithwikg.com/)
 
 ## Features
 
