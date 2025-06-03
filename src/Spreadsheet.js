@@ -241,13 +241,16 @@ const Spreadsheet = ({ initialData, onSave }) => {
         />
 
         <button className="button" onClick={() => setLetterPair(searchQuery, updateQuery)}>Update</button>
-
-        <input
-          type="file"
-          accept=".csv"
-          onChange={uploadCSV}
-          className="file-input"
-        />
+      
+        <div className="file-upload">
+          <div className="file-upload-label">Import from CSV</div>
+          <input
+            type="file"
+            accept=".csv"
+            onChange={uploadCSV}
+            className="file-input"
+          />
+        </div>
 
         <select value={buffer} onChange={(e) => setBuffer(e.target.value)}>
           <option value=''>Select a Buffer</option>
