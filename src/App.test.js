@@ -1,30 +1,36 @@
 import { render, screen } from '@testing-library/react';
 import App from './App';
-import { supabase } from './supabaseClient';
 
 jest.mock('./supabaseClient', () => ({
   supabase: {
     auth: {
-      getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
-      onAuthStateChange: jest.fn().mockReturnValue({
-        data: { subscription: { unsubscribe: jest.fn() } }
-      }),
-      signInWithPassword: jest.fn(),
-      signUp: jest.fn()
-    }
+      signOut: jest.fn()
+    },
+    from: jest.fn()
   }
 }));
 
-beforeEach(() => {
-  supabase.auth.getSession.mockResolvedValue({ data: { session: null } });
-  supabase.auth.onAuthStateChange.mockReturnValue({
-    data: { subscription: { unsubscribe: jest.fn() } }
-  });
-});
+beforeEach(() => window.localStorage.clear());
 
-test('renders the memo sign-in screen', async () => {
+test('opens the local workspace without authentication', async () => {
   render(<App />);
   expect(await screen.findByRole('heading', { name: 'Blind Letter Pairs' })).toBeInTheDocument();
-  expect(screen.getByLabelText('Email')).toBeInTheDocument();
-  expect(screen.getByLabelText('Password')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+  expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Password')).not.toBeInTheDocument();
+});
+
+test('loads saved letter pairs from browser storage', async () => {
+  const content = Array.from({ length: 26 }, () => Array(26).fill(''));
+  const colors = Array.from({ length: 26 }, () => Array(26).fill('white'));
+  content[0][1] = 'Baseball';
+
+  window.localStorage.setItem(
+    'memo_spreadsheet_data',
+    JSON.stringify({ content, colors })
+  );
+
+  render(<App />);
+
+  expect(await screen.findByRole('cell', { name: 'Baseball' })).toBeInTheDocument();
 });
