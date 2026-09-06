@@ -3,13 +3,38 @@ import { supabase } from './supabaseClient'
 import Spreadsheet from './Spreadsheet'
 import './account.css'
 
-export default function Account({ session }) {
-  const [loading, setLoading] = useState(false);
+const STORAGE_KEY = 'memo_spreadsheet_data';
+
+const normalizeSpreadsheetData = (data) => {
+  if (Array.isArray(data)) {
+    return {
+      content: data,
+      colors: Array.from({ length: 26 }, () => Array(26).fill('white'))
+    };
+  }
+
+  return data;
+};
+
+export default function Account({ session = null, storageMode = 'local' }) {
+  const [loading, setLoading] = useState(true);
   const [spreadsheetData, setSpreadsheetData] = useState(null);
+  const isLocal = storageMode === 'local';
 
   const loadSpreadsheetData = useCallback(async () => {
     try {
       setLoading(true);
+
+      if (isLocal) {
+        const savedData = window.localStorage.getItem(STORAGE_KEY);
+
+        if (savedData) {
+          setSpreadsheetData(normalizeSpreadsheetData(JSON.parse(savedData)));
+        }
+
+        return;
+      }
+
       const { user } = session;
 
       const { data, error } = await supabase
@@ -21,23 +46,14 @@ export default function Account({ session }) {
       if (error) {
         console.warn('Error loading spreadsheet:', error);
       } else if (data) {
-        const parsedData = JSON.parse(data.data);
-        // Handle both old format (just array) and new format (object with content and colors)
-        if (Array.isArray(parsedData)) {
-          setSpreadsheetData({
-            content: parsedData,
-            colors: Array.from({ length: 26 }, () => Array(26).fill('white'))
-          });
-        } else {
-          setSpreadsheetData(parsedData);
-        }
+        setSpreadsheetData(normalizeSpreadsheetData(JSON.parse(data.data)));
       }
     } catch (error) {
       console.error('Error loading spreadsheet:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isLocal, session]);
 
   useEffect(() => {
     loadSpreadsheetData();
@@ -45,6 +61,11 @@ export default function Account({ session }) {
 
   async function handleSaveSpreadsheet(data) {
     try {
+      if (isLocal) {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        setSpreadsheetData(data);
+        return;
+      }
       const { user } = session;
 
       const updates = {
@@ -72,25 +93,30 @@ export default function Account({ session }) {
   }
 
   return (
-    <div>
-      <header>
-        {/* <h1>Letter Pairs</h1> */}
+    <div className="workspace">
+      <header className="workspace-header">
+        <div className="workspace-title">
+          <span className="wordmark">memo</span>
+          <div>
+            <h1>Blind Letter Pairs</h1>
+            <p>{isLocal ? 'Saved in this browser' : session.user.email}</p>
+          </div>
+        </div>
+        {!isLocal && (
+          <button className="sign-out" onClick={() => supabase.auth.signOut()}>
+            Sign out
+          </button>
+        )}
       </header>
       
       {loading ? (
-        <div>Loading...</div>
+        <div className="loading-state">Loading letter pairs…</div>
       ) : (
         <Spreadsheet 
           initialData={spreadsheetData} 
           onSave={handleSaveSpreadsheet}
         />
       )}
-      <br />
-      <button className="button" onClick={() => supabase.auth.signOut()}>
-        Sign Out
-      </button>
     </div>
   );
 }
-
-

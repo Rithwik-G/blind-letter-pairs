@@ -1,7 +1,6 @@
 // import React, { useState, useRef, useEffect } from 'react';
 import './Spreadsheet.css';
 
-const ROWS = 26; // A-Z
 const COLS = 26; // A-Z
 
 const getCSVData = (data) => {
