@@ -3,13 +3,14 @@ import { supabase } from './supabaseClient'
 import Spreadsheet from './Spreadsheet'
 import './account.css'
 
-export default function Account({ session }) {
+export default function Account({ session, preview = false }) {
   const [loading, setLoading] = useState(false);
   const [spreadsheetData, setSpreadsheetData] = useState(null);
 
   const loadSpreadsheetData = useCallback(async () => {
     try {
       setLoading(true);
+      if (preview) return;
       const { user } = session;
 
       const { data, error } = await supabase
@@ -37,7 +38,7 @@ export default function Account({ session }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [preview, session]);
 
   useEffect(() => {
     loadSpreadsheetData();
@@ -45,6 +46,10 @@ export default function Account({ session }) {
 
   async function handleSaveSpreadsheet(data) {
     try {
+      if (preview) {
+        setSpreadsheetData(data);
+        return;
+      }
       const { user } = session;
 
       const updates = {
@@ -72,25 +77,31 @@ export default function Account({ session }) {
   }
 
   return (
-    <div>
-      <header>
-        {/* <h1>Letter Pairs</h1> */}
+    <div className="workspace">
+      <header className="workspace-header">
+        <div className="workspace-title">
+          <span className="wordmark">memo</span>
+          <div>
+            <h1>Blind Letter Pairs</h1>
+            <p>{preview ? 'Preview workspace' : session.user.email}</p>
+          </div>
+        </div>
+        {!preview && (
+          <button className="sign-out" onClick={() => supabase.auth.signOut()}>
+            Sign out
+          </button>
+        )}
       </header>
       
       {loading ? (
-        <div>Loading...</div>
+        <div className="loading-state">Loading letter pairs…</div>
       ) : (
         <Spreadsheet 
           initialData={spreadsheetData} 
           onSave={handleSaveSpreadsheet}
         />
       )}
-      <br />
-      <button className="button" onClick={() => supabase.auth.signOut()}>
-        Sign Out
-      </button>
     </div>
   );
 }
-
 

@@ -7,10 +7,12 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
+  const [message, setMessage] = useState('');
 
   const handleAuth = async (event) => {
     event.preventDefault();
     setLoading(true);
+    setMessage('');
 
     let result;
     if (isLogin) {
@@ -21,11 +23,9 @@ export default function Auth() {
 
     const { error } = result;
     if (error) {
-      alert(error.message);
-    } else {
-      if (!isLogin) {
-        alert('Account created! Please check your email to confirm.');
-      }
+      setMessage(error.message);
+    } else if (!isLogin) {
+      setMessage('Check your email to confirm your account.');
     }
 
     setLoading(false);
@@ -34,13 +34,16 @@ export default function Auth() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="auth-header">Create Blindsolving Letter Pairs</h1>
+        <span className="auth-wordmark">memo</span>
+        <h1 className="auth-header">Blind Letter Pairs</h1>
         <p className="auth-description">
-          {isLogin ? 'Welcome back! Sign in to continue.' : 'Create an account to get started'}
+          {isLogin ? 'Sign in to continue.' : 'Create an account.'}
         </p>
         <form className="auth-form" onSubmit={handleAuth}>
           <div className="input-group">
+            <label htmlFor="email">Email</label>
             <input
+              id="email"
               className="auth-input"
               type="email"
               placeholder="Your email"
@@ -50,7 +53,9 @@ export default function Auth() {
             />
           </div>
           <div className="input-group">
+            <label htmlFor="password">Password</label>
             <input
+              id="password"
               className="auth-input"
               type="password"
               placeholder="Your password"
@@ -60,13 +65,14 @@ export default function Auth() {
             />
           </div>
           <button className="auth-button" disabled={loading}>
-            {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Sign Up')}
+            {loading ? 'Please wait…' : (isLogin ? 'Sign in' : 'Create account')}
           </button>
         </form>
+        {message && <p className="auth-message" role="status">{message}</p>}
         <p className="auth-toggle">
-          {isLogin ? 'Don\'t have an account?' : 'Already have an account?'}{' '}
+          {isLogin ? 'New here?' : 'Already registered?'}{' '}
           <button onClick={() => setIsLogin(!isLogin)} className="auth-link">
-            {isLogin ? 'Sign up here' : 'Log in here'}
+            {isLogin ? 'Create an account' : 'Sign in'}
           </button>
         </p>
       </div>

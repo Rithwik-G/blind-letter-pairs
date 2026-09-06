@@ -6,20 +6,30 @@ import Account from './Account'
 
 function App() {
   const [session, setSession] = useState(null)
+  const isWorkspacePreview = process.env.NODE_ENV === 'development' &&
+    new URLSearchParams(window.location.search).get('preview') === 'workspace'
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
     })
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
     })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   return (
-    <div className="container" style={{ padding: '50px 0 100px 0' }}>
-      {!session ? <Auth /> : <Account key={session.user.id} session={session} />}
+    <div className="app-shell">
+      {isWorkspacePreview ? (
+        <Account preview session={{ user: { id: 'preview', email: 'preview@memo.local' } }} />
+      ) : !session ? (
+        <Auth />
+      ) : (
+        <Account key={session.user.id} session={session} />
+      )}
     </div>
   )
 }

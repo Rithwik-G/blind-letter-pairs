@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Spreadsheet.css';
-import getCSVData from './csv_utils'; // Assuming you have a utility to handle CSV data
+import getCSVData from './csv_utils';
 
 const ROWS = 26; // A-Z
 const COLS = 26; // A-Z 
@@ -27,29 +27,16 @@ const Spreadsheet = ({ initialData, onSave }) => {
   const inputRef = useRef(null);
   const [buffer, setBuffer] = useState('');
 
-  // // Update data when initialData changes
-  // useEffect(() => {
-  //   if (initialData) {
-  //     setData(initialData);
-  //   }
-  // }, [initialData]);
-
-  // useEffect(() => {
-  //   if (color) {
-  //     setColor(color);
-  //   }
-  // }, [color]);
-
-  const handleSave = () => {
+  const saveSnapshot = (nextData = data, nextColors = color) => {
     if (onSave) {
       onSave({
-        content: data,
-        colors: color
-      }); // can just send json data
+        content: nextData,
+        colors: nextColors
+      });
     }
   };
 
-  
+  const handleSave = () => saveSnapshot();
 
   const exportToCSV = () => {
     const csvContent = getCSVData(data);
@@ -86,8 +73,7 @@ const Spreadsheet = ({ initialData, onSave }) => {
     console.log('Anki CSV exported successfully');
   }
 
-  async function searchLetterPair(query) {
-    onSave(data);
+  function searchLetterPair(query) {
     if (query.length !== 2) {
       alert('Please enter a valid letter pair');
       return;
@@ -104,7 +90,7 @@ const Spreadsheet = ({ initialData, onSave }) => {
     }
   };
 
-  async function setLetterPair(pair, new_word) {
+  function setLetterPair(pair, newWord) {
     if (pair.length !== 2) {
       alert('Please enter a valid letter pair');
       return;
@@ -116,9 +102,10 @@ const Spreadsheet = ({ initialData, onSave }) => {
 
     if (ind1 >= 0 && ind1 < 26 && ind2 >= 0 && ind2 < 26) {
       const newData = data.map(r => r.slice());
-      newData[ind1][ind2] = new_word;
+      newData[ind1][ind2] = newWord;
       setData(newData);
-      onSave(newData);
+      saveSnapshot(newData, color);
+      setSearchResult(newWord || 'No result found');
     } else {
       alert('Invalid letter pair');
     }
@@ -150,7 +137,8 @@ const Spreadsheet = ({ initialData, onSave }) => {
       }
       
       setData(newData);
-      onSave(newData);
+      saveSnapshot(newData, color);
+      event.target.value = '';
     };
     reader.readAsText(file);
   };
@@ -170,7 +158,6 @@ const Spreadsheet = ({ initialData, onSave }) => {
     const newData = data.map(r => r.slice());
     newData[row][col] = e.target.value;
     setData(newData);
-    onSave(newData);
   };
 
   const handleContextMenu = (e, r, c) => {
@@ -179,7 +166,7 @@ const Spreadsheet = ({ initialData, onSave }) => {
     const currentColor = color[r][c];
     newColor[r][c] = nxt[currentColor];
     setColor(newColor);
-    handleSave();
+    saveSnapshot(data, newColor);
   };
 
   const moveEditing = (row, col) => {
@@ -217,51 +204,63 @@ const Spreadsheet = ({ initialData, onSave }) => {
 
   return (
     <>
-      <div className="button-container">
-        <button onClick={handleSave} className="button">Save</button>
-        <button onClick={exportToCSV} className="button">Export CSV</button>
-        <button onClick={exportToAnkiCSV} className="button">Export Anki Flashcards</button>
+      <div className="workspace-actions">
+        <button onClick={handleSave} className="button button-primary">Save</button>
+        <button onClick={exportToCSV} className="button button-secondary">Export CSV</button>
+        <button onClick={exportToAnkiCSV} className="button button-secondary">Export Anki</button>
+        <label className="button button-secondary file-button">
+          Import CSV
+          <input type="file" accept=".csv" onChange={uploadCSV} />
+        </label>
       </div>
 
-      <div className="search-container">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Enter letter pair (e.g., AB)."
-          maxLength={2}
-        />
-        <button className="button" onClick={() => searchLetterPair(searchQuery)}>Search</button>
-        {searchResult && <div className="search-result">Result: {searchResult}</div>}
-
-        <input
-          type="text"
-          value={updateQuery}
-          onChange={(e) => setUpdateQuery(e.target.value)}
-          placeholder="Updated Letter Pair"
-        />
-
-        <button className="button" onClick={() => setLetterPair(searchQuery, updateQuery)}>Update</button>
-      
-        <div className="file-upload">
-          <div className="file-upload-label">Import from CSV</div>
-          <input
-            type="file"
-            accept=".csv"
-            onChange={uploadCSV}
-            className="file-input"
-          />
+      <section className="pair-tools" aria-label="Letter pair tools">
+        <div className="tool-group pair-search">
+          <label htmlFor="pair-query">Letter pair</label>
+          <div className="inline-controls">
+            <input
+              id="pair-query"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === 'Enter' && searchLetterPair(searchQuery)}
+              placeholder="AB"
+              maxLength={2}
+            />
+            <button className="button button-secondary" onClick={() => searchLetterPair(searchQuery)}>Find</button>
+          </div>
+          {searchResult && <div className="search-result"><span>{searchQuery.toUpperCase()}</span>{searchResult}</div>}
         </div>
 
-        <select value={buffer} onChange={(e) => setBuffer(e.target.value)}>
-          <option value=''>Select a Buffer</option>
-          <option value='ARE'>ARE (ULB)</option>
-          <option value='CIM'>CIM (UFR)</option>
-        </select>
-      </div>
+        <div className="tool-group pair-update">
+          <label htmlFor="pair-word">Mnemonic</label>
+          <div className="inline-controls">
+            <input
+              id="pair-word"
+              type="text"
+              value={updateQuery}
+              onChange={(e) => setUpdateQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && setLetterPair(searchQuery, updateQuery)}
+              placeholder="Baseball"
+            />
+            <button className="button button-secondary" onClick={() => setLetterPair(searchQuery, updateQuery)}>Update</button>
+          </div>
+        </div>
+
+        <div className="tool-group buffer-tool">
+          <label htmlFor="buffer">Buffer</label>
+          <select id="buffer" value={buffer} onChange={(e) => setBuffer(e.target.value)}>
+            <option value=''>All pairs</option>
+            <option value='ARE'>ARE · ULB</option>
+            <option value='CIM'>CIM · UFR</option>
+          </select>
+        </div>
+      </section>
+
+      <p className="grid-hint">Click a cell to edit · right-click to mark confidence</p>
 
       <div className="spreadsheet-container">
-        <table className="spreadsheet">
+        <table className="spreadsheet" aria-label="Blindsolving letter pairs">
           <thead>
             <tr>
               <th></th>
@@ -306,7 +305,6 @@ const Spreadsheet = ({ initialData, onSave }) => {
         </table>
       </div>
 
-      
     </>
   );
 };
